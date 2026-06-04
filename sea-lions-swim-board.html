@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sea Lions Swim Meet Board</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bullpen-color: rgb(37, 55, 74);
+    --event-color: rgb(30, 115, 190);
+    --text-color: #ffffff;
+    --accent-blue: #00a8e8;
+    --dark-bg: #0a1929;
+    --light-bg: #f5f5f5;
+    --border-color: #ddd;
+    --button-primary: #00a8e8;
+    --button-hover: #0088bb;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════ */
+  /* DISPLAY MODE - Full Screen Board */
+  /* ══════════════════════════════════════════════════════════════════════════ */
+
+  .display-mode {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 4vw;
+    background: linear-gradient(135deg, #0a1929 0%, #1a2a3a 100%);
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23050f1a" width="100" height="100"/><circle cx="50" cy="50" r="40" fill="none" stroke="%23164e63" stroke-width="0.5" opacity="0.3"/></svg>');
+  }
+
+  .display-mode.hidden {
+    display: none;
+  }
+
+  .counter-display {
+    width: 60vw;
+    height: 75vh;
+    border-radius: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .counter-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .counter-display.bullpen {
+    background-color: var(--bullpen-color);
+  }
+
+  .counter-display.event {
+    background-color: var(--event-color);
+  }
+
+  .counter-number {
+    font-size: 40vw;
+    font-weight: bold;
+    line-height: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .counter-label {
+    font-size: 6vw;
+    text-align: center;
+    margin-top: -3vh;
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .mode-toggle-display {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s;
+    z-index: 100;
+  }
+
+  .mode-toggle-display:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════ */
+  /* CONTROLLER MODE - Admin Panel */
+  /* ══════════════════════════════════════════════════════════════════════════ */
+
+  .controller-mode {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--light-bg);
+    color: #333;
+  }
+
+  .controller-mode.hidden {
+    display: none;
+  }
+
+  .controller-header {
+    background-color: white;
+    border-bottom: 2px solid var(--border-color);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .controller-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #0a1929;
+  }
+
+  .mode-toggle {
+    background-color: var(--event-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+
+  .mode-toggle:hover {
+    background-color: var(--button-hover);
+  }
+
+  .controller-content {
+    flex: 1;
+    display: flex;
+    padding: 40px;
+    gap: 40px;
+    overflow-y: auto;
+  }
+
+  .counter-section {
+    flex: 1;
+    background-color: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .counter-section h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #0a1929;
+  }
+
+  .counter-section p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .counter-display-mini {
+    background: linear-gradient(135deg, var(--bullpen-color), var(--event-color));
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .counter-display-mini.bullpen {
+    background: linear-gradient(135deg, var(--bullpen-color), rgb(50, 80, 110));
+  }
+
+  .counter-display-mini.event {
+    background: linear-gradient(135deg, var(--event-color), rgb(20, 100, 180));
+  }
+
+  .counter-display-number {
+    font-size: 48px;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .counter-display-label {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background-color: var(--button-primary);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 168, 232, 0.4);
+  }
+
+  .btn-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: #e0e0e0;
+  }
+
+  .btn-danger {
+    background-color: #e74c3c;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #c0392b;
+  }
+
+  .btn:active {
+    transform: translateY(0);
+  }
+
+  .info-section {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.8;
+  }
+
+  .info-section code {
+    background-color: #eee;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    color: #333;
+  }
+
+  .reset-button {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  /* Keyboard shortcuts display */
+  .shortcuts {
+    background-color: #f0f7ff;
+    border: 1px solid #d0e0ff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+  }
+
+  .shortcuts h3 {
+    color: var(--event-color);
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #e0e0ff;
+  }
+
+  .shortcut-item:last-child {
+    border-bottom: none;
+  }
+
+  .shortcut-key {
+    background-color: #e0e0ff;
+    color: var(--event-color);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    margin-right: 10px;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .display-mode {
+      gap: 2vw;
+    }
+
+    .counter-display {
+      width: 35vw;
+      height: 60vh;
+      border-radius: 40px;
+    }
+
+    .counter-number {
+      font-size: 25vw;
+    }
+
+    .counter-label {
+      font-size: 4vw;
+    }
+
+    .controller-content {
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .counter-section {
+      padding: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .display-mode {
+      flex-direction: column;
+      gap: 3vh;
+    }
+
+    .counter-display {
+      width: 80vw;
+      height: 40vh;
+      border-radius: 30px;
+    }
+
+    .counter-number {
+      font-size: 20vw;
+    }
+
+    .counter-label {
+      font-size: 3vw;
+      margin-top: -2vh;
+    }
+
+    .controller-header {
+      padding: 15px 20px;
+    }
+
+    .controller-title {
+      font-size: 20px;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    body {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- DISPLAY MODE -->
+<div id="displayMode" class="display-mode">
+  <button class="mode-toggle-display" onclick="toggleMode()">⚙ Controller</button>
+  
+  <div class="counter-display bullpen">
+    <div class="counter-number" id="bullpenDisplay">00</div>
+    <div class="counter-label">Bullpen up to</div>
+  </div>
+
+  <div class="counter-display event">
+    <div class="counter-number" id="eventDisplay">00</div>
+    <div class="counter-label">Event</div>
+  </div>
+</div>
+
+<!-- CONTROLLER MODE -->
+<div id="controllerMode" class="controller-mode hidden">
+  <div class="controller-header">
+    <div class="controller-title">🦁 Sea Lions Swim Board</div>
+    <button class="mode-toggle" onclick="toggleMode()">View Board ▶</button>
+  </div>
+
+  <div class="controller-content">
+    <!-- BULLPEN SECTION -->
+    <div class="counter-section">
+      <h2>Bullpen Counter</h2>
+      <p>Swimmers up to...</p>
+      
+      <div class="counter-display-mini bullpen">
+        <div class="counter-display-number" id="bullpenCount">00</div>
+        <div class="counter-display-label">Bullpen</div>
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-danger" onclick="decrementBullpen()">− Decrease</button>
+        <button class="btn btn-primary" onclick="incrementBullpen()">+ Increase</button>
+      </div>
+
+      <div class="info-section">
+        <strong>Quick Control:</strong><br>
+        Use <code>Left Arrow</code> or <code>PageUp</code> to decrease<br>
+        Use <code>Right Arrow</code> or <code>PageDown</code> to increase
+      </div>
+
+      <button class="btn btn-secondary reset-button" onclick="resetBullpen()">Reset to 0</button>
+
+      <div class="shortcuts">
+        <h3>🎮 Shortcuts</h3>
+        <div class="shortcut-item">
+          <span class="shortcut-key">← Left (1x)</span>
+          <span>Decrease Bullpen</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">→ Right (1x)</span>
+          <span>Increase Bullpen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVENT SECTION -->
+    <div class="counter-section">
+      <h2>Event Counter</h2>
+      <p>Current race number...</p>
+      
+      <div class="counter-display-mini event">
+        <div class="counter-display-number" id="eventCount">00</div>
+        <div class="counter-display-label">Event</div>
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-danger" onclick="decrementEvent()">− Decrease</button>
+        <button class="btn btn-primary" onclick="incrementEvent()">+ Increase</button>
+      </div>
+
+      <div class="info-section">
+        <strong>Quick Control:</strong><br>
+        Double-tap <code>Left Arrow</code> (within 3 sec)<br>
+        Double-tap <code>Right Arrow</code> (within 3 sec)
+      </div>
+
+      <button class="btn btn-secondary reset-button" onclick="resetEvent()">Reset to 0</button>
+
+      <div class="shortcuts">
+        <h3>🎮 Shortcuts</h3>
+        <div class="shortcut-item">
+          <span class="shortcut-key">← Left (2x)</span>
+          <span>Decrease Event</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">→ Right (2x)</span>
+          <span>Increase Event</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">← Left (3x)</span>
+          <span>Decrease Both</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">→ Right (3x)</span>
+          <span>Increase Both</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+const STATE_KEYS = {
+  BULLPEN: 'sea_lions_bullpen',
+  EVENT: 'sea_lions_event',
+  MODE: 'sea_lions_mode'
+};
+
+const MODES = {
+  DISPLAY: 'display',
+  CONTROLLER: 'controller'
+};
+
+// Initialize state from localStorage
+function getState(key, defaultValue = 0) {
+  const value = localStorage.getItem(key);
+  return value !== null ? parseInt(value, 10) : defaultValue;
+}
+
+function setState(key, value) {
+  localStorage.setItem(key, String(value));
+  render();
+}
+
+function getCurrentMode() {
+  return localStorage.getItem(STATE_KEYS.MODE) || MODES.DISPLAY;
+}
+
+function setCurrentMode(mode) {
+  localStorage.setItem(STATE_KEYS.MODE, mode);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COUNTER OPERATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function incrementBullpen() {
+  const current = getState(STATE_KEYS.BULLPEN);
+  setState(STATE_KEYS.BULLPEN, current + 1);
+}
+
+function decrementBullpen() {
+  const current = getState(STATE_KEYS.BULLPEN);
+  setState(STATE_KEYS.BULLPEN, Math.max(0, current - 1));
+}
+
+function resetBullpen() {
+  setState(STATE_KEYS.BULLPEN, 0);
+}
+
+function incrementEvent() {
+  const current = getState(STATE_KEYS.EVENT);
+  setState(STATE_KEYS.EVENT, current + 1);
+}
+
+function decrementEvent() {
+  const current = getState(STATE_KEYS.EVENT);
+  setState(STATE_KEYS.EVENT, Math.max(0, current - 1));
+}
+
+function resetEvent() {
+  setState(STATE_KEYS.EVENT, 0);
+}
+
+function formatCount(value) {
+  return String(value).padStart(2, '0');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDERING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function render() {
+  const bullpen = getState(STATE_KEYS.BULLPEN);
+  const event = getState(STATE_KEYS.EVENT);
+  const formatted = { bullpen: formatCount(bullpen), event: formatCount(event) };
+
+  // Update display mode
+  document.getElementById('bullpenDisplay').textContent = formatted.bullpen;
+  document.getElementById('eventDisplay').textContent = formatted.event;
+
+  // Update controller mode
+  document.getElementById('bullpenCount').textContent = formatted.bullpen;
+  document.getElementById('eventCount').textContent = formatted.event;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODE SWITCHING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function toggleMode() {
+  const currentMode = getCurrentMode();
+  const newMode = currentMode === MODES.DISPLAY ? MODES.CONTROLLER : MODES.DISPLAY;
+  setCurrentMode(newMode);
+  updateModeDisplay();
+}
+
+function updateModeDisplay() {
+  const mode = getCurrentMode();
+  const displayMode = document.getElementById('displayMode');
+  const controllerMode = document.getElementById('controllerMode');
+
+  if (mode === MODES.DISPLAY) {
+    displayMode.classList.remove('hidden');
+    controllerMode.classList.add('hidden');
+  } else {
+    displayMode.classList.add('hidden');
+    controllerMode.classList.remove('hidden');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+let tapSequence = [];
+let tapTimer = null;
+const TAP_WINDOW = 3000; // 3 seconds
+
+function registerTap(direction) {
+  // Add to sequence
+  tapSequence.push(direction);
+
+  // Clear existing timer
+  if (tapTimer) clearTimeout(tapTimer);
+
+  // Set up new timer to process sequence
+  tapTimer = setTimeout(() => {
+    processTapSequence();
+    tapSequence = [];
+  }, TAP_WINDOW);
+
+  // Check if we should process immediately (after 3 taps)
+  if (tapSequence.length >= 3) {
+    clearTimeout(tapTimer);
+    processTapSequence();
+    tapSequence = [];
+  }
+}
+
+function processTapSequence() {
+  const seq = tapSequence.join('');
+  
+  // Triple taps
+  if (seq === 'LLL') {
+    decrementBullpen();
+    decrementEvent();
+    return;
+  }
+  if (seq === 'RRR') {
+    incrementBullpen();
+    incrementEvent();
+    return;
+  }
+
+  // Double taps
+  if (seq === 'LL') {
+    decrementEvent();
+    return;
+  }
+  if (seq === 'RR') {
+    incrementEvent();
+    return;
+  }
+
+  // Single taps
+  if (seq === 'L') {
+    decrementBullpen();
+    return;
+  }
+  if (seq === 'R') {
+    incrementBullpen();
+    return;
+  }
+}
+
+// Listen for keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    registerTap('L');
+  } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+    e.preventDefault();
+    registerTap('R');
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Initial render
+render();
+updateModeDisplay();
+
+// Set up auto-refresh for synchronized displays
+setInterval(render, 500);
+</script>
+
+</body>
+</html>
